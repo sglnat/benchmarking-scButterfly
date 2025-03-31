@@ -7,26 +7,20 @@
 
 ## Installation
 
-It's prefered to create a new environment for scButterfly
-
-```
-conda create -n scButterfly python==3.9
-conda activate scButterfly
+run a docker container using: 
+```bash
+docker run --gpus all -p 8080:8080 --rm -ti -v /raid/asmagulova/scbutterfly:/workspace scbutterfly
 ```
 
-scButterfly is available on PyPI, and could be installed using
+Change the path to your working directory on DGX 
+
+and then run: 
 
 ```
 pip install scButterfly
 ```
 
-Installation via Github is also provided
 
-```
-git clone https://github.com/Biox-NKU/scButterfly
-cd scButterfly
-pip install scButterfly-0.0.9-py3-none-any.whl
-```
 
 This process will take approximately 5 to 10 minutes, depending on the user's computer device and internet connectivition.
 
