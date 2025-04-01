@@ -940,6 +940,7 @@ class Model():
                     time.sleep(0.01)
                     pbar.update(1)
 
+        '''
         with torch.no_grad():
             with tqdm(total = len(self.A_test_dataloader), ncols=100) as pbar:
                 pbar.set_description('ATAC to RNA predicting...')
@@ -955,39 +956,43 @@ class Model():
                     
                     time.sleep(0.01)
                     pbar.update(1)
+        '''
         
-        R2A_predict = tensor2adata(R2A_predict)
-        A2R_predict = tensor2adata(A2R_predict)
+        #R2A_predict = tensor2adata(R2A_predict)
+        #A2R_predict = tensor2adata(A2R_predict)
         
-        A2R_predict.obs = self.ATAC_data_obs.iloc[test_id_a, :]
+        R2A_predict = tensor2adata(R2A_predict, feature_names=getattr(self.ATAC_data, "var_names", None))
+        #A2R_predict = tensor2adata(A2R_predict, feature_names=getattr(self.RNA_data, "var_names", None))
+
+        #A2R_predict.obs = self.ATAC_data_obs.iloc[test_id_a, :]
         R2A_predict.obs = self.RNA_data_obs.iloc[test_id_r, :]
 
         """ draw umap if needed """
         if test_figure:
             my_logger.info('drawing tsne figures ...')
-            fig_A2R = draw_tsne(A2R_predict, 'a2r', 'cell_type')
+            #fig_A2R = draw_tsne(A2R_predict, 'a2r', 'cell_type')
             fig_R2A = draw_tsne(R2A_predict, 'r2a', 'cell_type')
             
-            fig_list = [fig_A2R, fig_R2A]
+            fig_list = [fig_R2A] #[figA2R, fig_R2A]
             with PdfPages(output_path + '/tSNE.pdf') as pdf:
                 for i in range(len(fig_list)):
                     pdf.savefig(figure=fig_list[i], dpi=200, bbox_inches='tight')
                     plt.close()
         else:
             my_logger.info('calculate neighbors graph for following test ...')
-            sc.pp.pca(A2R_predict)
-            sc.pp.neighbors(A2R_predict)
+            #sc.pp.pca(A2R_predict)
+            #sc.pp.neighbors(A2R_predict)
             sc.pp.pca(R2A_predict)
             sc.pp.neighbors(R2A_predict)
                     
         """ test cluster index if needed """
         if test_cluster:
             index_R2A = calculate_cluster_index(R2A_predict)
-            index_A2R = calculate_cluster_index(A2R_predict)
+            #index_A2R = calculate_cluster_index(A2R_predict)
             
-            index_matrix = pd.DataFrame([index_R2A, index_A2R])
+            index_matrix = pd.DataFrame([index_R2A])   # pd.DataFrame([index_R2A, index_A2R])
             index_matrix.columns = ['ARI', 'AMI', 'NMI', 'HOM']
-            index_matrix.index = ['R2A', 'A2R']
+            index_matrix.index = ['R2A']   #['R2A', 'A2R']
             index_matrix.to_csv(output_path + '/cluster_index.csv')
             
 
@@ -995,8 +1000,8 @@ class Model():
         if output_data and not os.path.exists(output_path + '/predict'):
             my_logger.warning('trying to write predict to path: '+str(output_path)+'/predict')
             os.mkdir(output_path + '/predict')
-            A2R_predict.write_h5ad(output_path + '/predict/A2R.h5ad')
+            #A2R_predict.write_h5ad(output_path + '/predict/A2R.h5ad')
             R2A_predict.write_h5ad(output_path + '/predict/R2A.h5ad')
             
         if return_predict:
-            return A2R_predict, R2A_predict
+            return R2A_predict   #A2R_predict, R2A_predict
