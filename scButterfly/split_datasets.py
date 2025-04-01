@@ -512,3 +512,100 @@ def unpaired_split_dataset(
             
             
     return id_list
+
+def unpaired_split_dataset_fixed_rna(
+    RNA_data, 
+    ATAC_data, 
+    seed = 19193
+):
+    """
+    Uses scRNA-Seq and scATAC-Seq for training & validation, uses scRNA-Seq Selina to test and create scATAC-Seq prediction
+    
+    Parameters
+    ----------
+    RNA_data
+        full RNA data for spliting.
+        
+    ATAC_data
+        full ATAC data for spliting.
+        
+    seed
+        random seed use to split datasets, if don't give random seed, set it None.
+        
+    """ 
+    
+    if not seed is None:
+        setup_seed(seed)
+        
+    RNA_train_val_data = RNA_data[10739:12719]
+
+    RNA_types = list(RNA_train_val_data.obs.cell_type.value_counts().index)
+    ATAC_types = list(ATAC_data.obs.cell_type.value_counts().index)
+    cell_type_list = list(set(RNA_types) & set(ATAC_types))
+    cell_type_r_only = list(set(RNA_types) - set(ATAC_types))
+    cell_type_a_only = list(set(ATAC_types) - set(RNA_types))
+    celltype_distribution_r = RNA_train_val_data.obs.cell_type.value_counts(normalize=True)
+    celltype_distribution_a = ATAC_data.obs.cell_type.value_counts(normalize=True)
+    celltype_distribution = {}
+    for each in cell_type_list:
+        celltype_distribution[each] = (celltype_distribution_r[each] + celltype_distribution_a[each]) / 2
+    sum_celltype = sum(celltype_distribution.values())
+    for each in cell_type_list:
+        celltype_distribution[each] /= sum_celltype
+        
+    RNA_id_list = []
+    ATAC_id_list = []
+    RNA_id_list_r_only = []
+    ATAC_id_list_a_only = []
+    
+    for i in range(RNA_train_val_data.X.shape[0]):
+        if RNA_train_val_data.obs.cell_type[i] in cell_type_list:
+            RNA_id_list.append(i)
+        if RNA_train_val_data.obs.cell_type[i] in cell_type_r_only:
+            RNA_id_list_r_only.append(i)
+    for i in range(ATAC_data.X.shape[0]):
+        if ATAC_data.obs.cell_type[i] in cell_type_list:
+            ATAC_id_list.append(i)
+        if ATAC_data.obs.cell_type[i] in cell_type_a_only:
+            ATAC_id_list_a_only.append(i)
+
+    RNA_test_data = RNA_data[0:10738]
+
+    RNA_id_test_list = []
+    for i in range(RNA_test_data.X.shape[0]):
+        if RNA_test_data.obs.cell_type[i] in cell_type_list:
+            RNA_id_test_list.append(i)
+            
+    random.shuffle(RNA_id_list)
+    random.shuffle(ATAC_id_list)
+    random.shuffle(RNA_id_test_list)
+    
+    RNA_train_count = int(0.64*len(RNA_id_list))
+    RNA_test_count = int(len(RNA_id_test_list))
+    RNA_validation_count = int(0.16*len(RNA_id_list))
+    ATAC_train_count = int(0.64*len(ATAC_id_list))
+    ATAC_test_count = int(0.2*len(ATAC_id_list))
+    ATAC_validation_count = int(0.16*len(ATAC_id_list))
+    
+    max_train_count = (RNA_train_count + ATAC_train_count) / 2
+    max_validation_count = (RNA_validation_count + ATAC_validation_count) / 2
+    
+    train_batch_r = RNA_id_list[:RNA_train_count]
+    test_batch_r = RNA_id_test_list[0:RNA_test_count]
+    validation_batch_r = RNA_id_list[RNA_train_count:RNA_train_count+RNA_validation_count]
+
+    train_batch_a = ATAC_id_list[:ATAC_train_count]
+    validation_batch_a = ATAC_id_list[ATAC_train_count:ATAC_train_count+ATAC_validation_count]
+    test_batch_a = ATAC_id_list[ATAC_train_count + ATAC_validation_count:]
+    
+    id_list = [[[] for j in range(6)] for i in range(5)]
+    
+    for i in range(5):
+        id_list[i][4].extend(test_batch_r)
+        id_list[i][5].extend(test_batch_a)
+        id_list[i][0].extend(train_batch_r)    
+        id_list[i][1].extend(train_batch_a)
+        id_list[i][2].extend(validation_batch_a)
+        id_list[i][3].extend(validation_batch_r)
+
+    return id_list
