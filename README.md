@@ -31,7 +31,7 @@ The model runs in the unpaired mode, with RNA and ATAC from the multiome taken a
 
 ## Quick Start
 
-Use {this tutorial}{https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_unpaired_prediction/RNA_ATAC_unpaired_scButterfly-T.html} for reference. 
+Use [this tutorial](https://scbutterfly.readthedocs.io/en/latest/Tutorial/RNA_ATAC_unpaired_prediction/RNA_ATAC_unpaired_scButterfly-T.html) for reference. 
 
 Generate a scButterfly model first with following process:
 
